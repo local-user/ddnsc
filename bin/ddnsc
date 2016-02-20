@@ -11,6 +11,8 @@
     cf_url='https://www.cloudflare.com/api_json.html'
 
     # global(s)
+    script_config="$HOME/.config/ddnsc"
+    script_config_cf="$script_config/CloudFlare.cfg"
     script_ddnsc_vendor="`basename $0`-vendor"
     script_name=$(basename $0)
     script_verbose=
@@ -26,7 +28,10 @@
         function display {
 
             # start
-            log "Display"
+            log "Displaying"
+
+            # config
+            [ -e "$script_config_cf" ] && source "$script_config_cf"
 
             # args
             while getopts ":a:d:e:v" FLAG; do
@@ -67,8 +72,8 @@
             )
 
             # response - check(s)
-            [[ "$curl" == *"error"* ]] && error "Error response contains errors.."  && exit 2
-            [ -z $curl               ] && error "Error empty response."             && exit 2
+            [[ "$curl" == *"error"* ]] && error "Error response contains errors" && exit 2
+            [ -z $curl               ] && error "Error empty response"           && exit 2
 
             # response - display - verbose
             echo $curl | python -m json.tool
@@ -83,37 +88,40 @@
             # start
             log "Updating"
 
+            # config
+            [ -e "$script_config_cf" ] && source "$script_config_cf"
+
             # args
             while getopts ":a:d:e:i:n:t:v" FLAG; do
                 case "$FLAG" in
-                    a)  api_tkn="$OPTARG"       # api key
+                    a)  api_tkn="$OPTARG"
                         ;;
-                    d)  domain="$OPTARG"        # domain
+                    d)  domain="$OPTARG"
                         ;;
-                    e)  email="$OPTARG"         # email
+                    e)  email="$OPTARG"
                         ;;
-                    i)  id="$OPTARG"            # record id
+                    i)  record_id="$OPTARG"
                         ;;
-                    n)  name="$OPTARG"          # name
+                    n)  record_name="$OPTARG"
                         ;;
-                    r)  record="$OPTARG"        # record type
+                    r)  record_type="$OPTARG"
                         ;;
-                    t)  ttl="$OPTARG"           # time to live (ttl)
+                    t)  ttl="$OPTARG"
                         ;;
-                    v)  verbose=1               # verbose
+                    v)  verbose=1
                         ;;
                 esac
             done
 
             # check(s)
-            [ -z "$a"       ]   &&  a='rec_edit'
-            [ -z "$api_tkn" ]   &&  usage_update  &&  exit 2
-            [ -z "$domain"  ]   &&  usage_update  &&  exit 2
-            [ -z "$email"   ]   &&  usage_update  &&  exit 2
-            [ -z "$id"      ]   &&  usage_update  &&  exit 2
-            [ -z "$name"    ]   &&  usage_update  &&  exit 2
-            [ -z "$record"  ]   &&  record="A"
-            [ -z "$ttl"     ]   &&  ttl=1
+            [ -z "$a"           ]   &&  a='rec_edit'
+            [ -z "$api_tkn"     ]   &&  usage_update  &&  exit 2
+            [ -z "$domain"      ]   &&  usage_update  &&  exit 2
+            [ -z "$email"       ]   &&  usage_update  &&  exit 2
+            [ -z "$record_id"   ]   &&  usage_update  &&  exit 2
+            [ -z "$record_name" ]   &&  usage_update  &&  exit 2
+            [ -z "$record_type" ]   &&  record_type="A"
+            [ -z "$ttl"         ]   &&  ttl=1
 
             # ip - get
             ip=$( curl -kss "$ip_url" )
@@ -142,16 +150,16 @@
                 -d "tkn=$api_tkn"                   \
                 -d "email=$email"                   \
                 -d "z=$domain"                      \
-                -d "id=$id"                         \
-                -d "type=$record"                   \
-                -d "name=$name"                     \
+                -d "id=$record_id"                  \
+                -d "type=$record_type"              \
+                -d "name=$record_name"              \
                 -d "ttl=$ttl"                       \
                 -d "content=$ip"
             )
 
             # response - check(s)
-            [[ "$curl" == *"error"* ]] && error "Error response contains errors.."  && exit 2
-            [ -z $curl               ] && error "Error empty response."             && exit 2
+            [[ "$curl" == *"error"* ]] && error "Error response contains errors" && exit 2
+            [ -z $curl               ] && error "Error empty response"           && exit 2
 
             # response - display - verbose
             if [ $verbose ]; then
