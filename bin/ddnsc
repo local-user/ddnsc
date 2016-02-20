@@ -1,0 +1,251 @@
+#!/bin/bash
+#
+#   abs
+#
+#
+
+
+
+
+    # cloudflare
+    cf_url='https://www.cloudflare.com/api_json.html'
+
+    # global(s)
+    script_ddnsc_vendor="`basename $0`-vendor"
+    script_name=$(basename $0)
+    script_verbose=
+
+    # ip
+    ip_url='ipinfo.io/ip'
+
+
+
+
+    # | feature(s)
+
+        function display {
+
+            # start
+            log "Display"
+
+            # args
+            while getopts ":a:d:e:v" FLAG; do
+                case "$FLAG" in
+                    a)  api_tkn="$OPTARG"       # api key
+                        ;;
+                    d)  domain="$OPTARG"        # domain
+                        ;;
+                    e)  email="$OPTARG"         # email
+                        ;;
+                    v)  verbose=1               # verbose
+                        ;;
+                esac
+            done
+
+            # check(s)
+            [ -z "$a"       ]   &&  a='rec_load_all'
+            [ -z "$api_tkn" ]   &&  usage_display  &&  exit 2
+            [ -z "$domain"  ]   &&  usage_display  &&  exit 2
+            [ -z "$email"   ]   &&  usage_display  &&  exit 2
+
+            # curl - args - verbose
+            if [ $verbose ]; then
+                curl_args='-v'
+            else
+                curl_args='-ss'
+            fi
+
+            # curl - cloudflare - api - update
+            log "POST '$a' -> '$cf_url'"
+            curl=$(
+                curl "$cf_url"                      \
+                "$curl_args"                        \
+                -d "a=$a"                           \
+                -d "tkn=$api_tkn"                   \
+                -d "email=$email"                   \
+                -d "z=$domain"                      \
+            )
+
+            # response - check(s)
+            [[ "$curl" == *"error"* ]] && error "Error response contains errors.."  && exit 2
+            [ -z $curl               ] && error "Error empty response."             && exit 2
+
+            # response - display - verbose
+            echo $curl | python -m json.tool
+
+            # stop
+            log "Displayed"
+
+        }
+
+        function update {
+
+            # start
+            log "Updating"
+
+            # args
+            while getopts ":a:d:e:i:n:t:v" FLAG; do
+                case "$FLAG" in
+                    a)  api_tkn="$OPTARG"       # api key
+                        ;;
+                    d)  domain="$OPTARG"        # domain
+                        ;;
+                    e)  email="$OPTARG"         # email
+                        ;;
+                    i)  id="$OPTARG"            # record id
+                        ;;
+                    n)  name="$OPTARG"          # name
+                        ;;
+                    r)  record="$OPTARG"        # record type
+                        ;;
+                    t)  ttl="$OPTARG"           # time to live (ttl)
+                        ;;
+                    v)  verbose=1               # verbose
+                        ;;
+                esac
+            done
+
+            # check(s)
+            [ -z "$a"       ]   &&  a='rec_edit'
+            [ -z "$api_tkn" ]   &&  usage_update  &&  exit 2
+            [ -z "$domain"  ]   &&  usage_update  &&  exit 2
+            [ -z "$email"   ]   &&  usage_update  &&  exit 2
+            [ -z "$id"      ]   &&  usage_update  &&  exit 2
+            [ -z "$name"    ]   &&  usage_update  &&  exit 2
+            [ -z "$record"  ]   &&  record="A"
+            [ -z "$ttl"     ]   &&  ttl=1
+
+            # ip - get
+            ip=$( curl -kss "$ip_url" )
+            log "GET  '$ip_url' -> '$ip'"
+
+            # ip - check
+            utility_valid_ip "$ip"
+            if [ $? -ne 0 ]; then
+                error "BAD  '$ip'"
+                exit 2
+            fi
+
+            # curl - args - verbose
+            if [ $verbose ]; then
+                curl_args='-v'
+            else
+                curl_args='-ss'
+            fi
+
+            # curl - cloudflare - api - update
+            log "POST '$a' -> '$cf_url'"
+            curl=$(
+                curl "$cf_url"                      \
+                "$curl_args"                        \
+                -d "a=$a"                           \
+                -d "tkn=$api_tkn"                   \
+                -d "email=$email"                   \
+                -d "z=$domain"                      \
+                -d "id=$id"                         \
+                -d "type=$record"                   \
+                -d "name=$name"                     \
+                -d "ttl=$ttl"                       \
+                -d "content=$ip"
+            )
+
+            # response - check(s)
+            [[ "$curl" == *"error"* ]] && error "Error response contains errors.."  && exit 2
+            [ -z $curl               ] && error "Error empty response."             && exit 2
+
+            # response - display - verbose
+            if [ $verbose ]; then
+                echo $curl | python -m json.tool
+            fi
+
+            # stop
+            log "Updated"
+
+            # return
+            return 0
+
+        }
+
+    # feature(s) |
+
+
+    # | function(s)
+
+        function error {
+            logger -s -p user.error -t "$script_name" "$@"
+        }
+
+        function log {
+            logger -s -p user.notice -t "$script_name" "$@"
+        }
+
+        function usage {
+            echo "$0 usage: $0 []"
+        }
+
+        function usage_display {
+            echo "$0 display usage: $0 [-a api_token] [-d domain] [-e email]"
+        }
+
+        function usage_update {
+            echo "$0 update usage: $0 [-a api_token] [-d domain] [-e email] [-i record id] [-n record name] [-t ttl]"
+        }
+
+    # function(s) |
+
+
+    # | utiltiy
+
+        #
+        #   valid-ip | 3rdparty / Vendor
+        #
+        function utility_valid_ip {
+            ip=$1
+            if [ `echo $ip | grep -o '\.' | wc -l` -ne 3 ]; then
+                    return 1;
+            elif [ `echo $ip | tr '.' ' ' | wc -w` -ne 4 ]; then
+                    return 1;
+            else
+                    for OCTET in `echo $ip | tr '.' ' '`; do
+                            if ! [[ $OCTET =~ ^[0-9]+$ ]]; then
+                                    return 1
+                            elif [[ $OCTET -lt 0 || $OCTET -gt 255 ]]; then
+                                    return 1
+                            fi
+                    done
+            fi
+            return 0
+        }
+        #
+        #   Reference
+        #    - https://zindilis.com/blog/2013/05/10/bash-check-that-string-is-ip.html
+        #
+
+    # utility |
+
+
+    # | main
+
+        # check - arg(s)
+        [ $# -lt 1 ] && usage && exit 2
+
+        # case - arg - 1
+        case "$1" in
+            display)    shift
+                        display "$@"
+                        ;;
+            update)     shift
+                        update "$@"
+                        ;;
+            *)          usage
+                        ;;
+        esac
+
+    # main |
+
+
+
+
+#
+#   <|%_%|>
+#
