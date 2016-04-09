@@ -9,9 +9,9 @@ DDNSC updates a CloudFlare 'A' record with a retrieved IP.
 - update
 
 ## (optional) config
-- Create '~/.config/ddnsc'
-- Copy 'sample/CloudFlare.cfg' -> '~/.config/ddnsc'
-- Edit '~/.config/ddnsc/CloudFlare.cfg'
+- Create    '~/.config/ddnsc'
+- Copy      'sample/CloudFlare.cfg' -> '~/.config/ddnsc'
+- Edit      '~/.config/ddnsc/CloudFlare.cfg'
 - Run
 
 ## note(s)
