@@ -188,7 +188,7 @@
         }
 
         function usage {
-            echo "$0 usage: $0 []"
+            echo "$0 usage: $0 [display|update]"
         }
 
         function usage_display {
