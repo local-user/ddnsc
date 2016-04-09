@@ -1,0 +1,131 @@
+#!/bin/bash
+#
+#    vagrant - script - provision
+#
+
+
+
+
+    # export - noninteractive
+    export DEBIAN_FRONTEND=noninteractive
+
+
+    # | ddnsc
+    if [ -d '/tmp/ddnsc' ]; then
+
+        # remove existing
+        [ -d '/opt/ddnsc' ] && rm -vrf '/opt/ddnsc'
+
+        # move
+        mv -v '/tmp/ddnsc' '/opt/ddnsc'
+
+    fi
+    # ddnsc |
+
+
+    # | ssh
+    if [ -d '/tmp/ssh' ]; then
+
+        # mkdir
+        mkdir -p '/root/.ssh'
+
+        # mv
+        mv -v '/tmp/ssh/'* '/root/.ssh'
+
+        # ownership
+        chown -R root:root '/root/.ssh'
+
+        # permission(s)
+        find '/root/.ssh' -type f -exec chmod 600 {} \;
+        find '/root/.ssh' -type d -exec chmod 700 {} \;
+
+        # rm
+        rm -r '/tmp/ssh'
+
+    fi
+    # ssh |
+
+
+    # | system
+    if [ -d '/tmp/system' ]; then
+
+        # remove existing
+        [ -d '/opt/system' ] && rm -vrf '/opt/system'
+
+        # move
+        mv -v '/tmp/system' '/opt/system'
+
+    fi
+    # system |
+
+
+    # | aptitude
+
+        aptitude update
+        aptitude upgrade -q -y
+        aptitude install -q -y fail2ban git realpath tree vim
+
+    # aptitude |
+
+
+    # | git
+
+        # git - clone - aln
+        if [ -d '/opt/aln' ]; then
+            cd '/opt/aln' && git pull
+        else
+            git clone 'https://github.com/local-user/aln.git' '/opt/aln'
+        fi
+
+    # git |
+
+
+    # | user
+
+        # group
+        groupadd ddnsc
+
+        # user
+        useradd -s /bin/bash -m -d /home/ddnsc -g ddnsc ddnsc
+
+        # ddsnc
+        chown -R ddnsc:ddnsc /home/ddnsc
+
+    # user |
+
+
+    # | crontab
+
+        # generate
+        echo '0 * * * * /bin/bash /opt/ddnsc/bin/ddnsc update' >> cron
+
+        # install
+        crontab -u ddnsc cron
+
+        # cleanup
+        rm cron
+
+    # crontab |
+
+
+    # | aln
+
+        # aln - '/opt/system' -> '/'
+        /bin/bash /opt/aln/bin/aln -s '/opt/system' -d '/'
+
+    # aln |
+
+
+    # | restart
+
+        # sshd
+        service ssh restart
+
+    # restart |
+
+
+
+
+#
+# !(-.-)!
+#

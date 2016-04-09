@@ -1,0 +1,65 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# Vagrantfile API/syntax version.
+VAGRANTFILE_API_VERSION = "2"
+
+# | Vagrant
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+
+
+    # | global
+
+        # base - box
+        config.vm.box = "ubuntu/trusty64"
+
+        # network - adapter - bridged
+        config.vm.network "public_network"
+
+        # share - vagrant - disable
+        config.vm.synced_folder '.', '/vagrant', disabled: true
+
+        # copy - ssh / system
+        config.vm.provision "file", source: "../bin",       destination: "/tmp/ddnsc/bin"
+        config.vm.provision "file", source: "../sample",    destination: "/tmp/ddnsc/sample"
+        config.vm.provision "file", source: "ssh",          destination: "/tmp/ssh"
+        config.vm.provision "file", source: "system",       destination: "/tmp/system"
+
+        # provision - shell - bash - script
+        config.ssh.shell = "bash -c 'BASH_ENV=/etc/profile exec bash'"
+        config.vm.provision "shell", path: "script/provision"
+
+        # ssh - agent - fowarding
+        config.ssh.forward_agent = true
+
+        # | VirtualBox
+        config.vm.provider "virtualbox" do |vb|
+
+            # VBoxManage - settings
+            vb.customize [
+                "modifyvm", :id,
+                "--memory", "256",
+            ]
+
+        end
+        # VirtualBox |
+
+    # global |
+
+
+    # | machine(s)
+
+        # | system-ddnsc
+        config.vm.define "system-ddnsc" do |web|
+            config.vm.hostname = "system-ddnsc"
+            config.vm.provider :virtualbox do |vb|
+                vb.name = "system-ddnsc"
+            end
+        end
+        # system-ddnsc |
+
+    # machine(s) |
+
+
+end
+# Vagrant |
