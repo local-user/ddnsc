@@ -22,7 +22,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         # copy - ssh / system
         config.vm.provision "file", source: "../bin",       destination: "/tmp/ddnsc/bin"
         config.vm.provision "file", source: "../sample",    destination: "/tmp/ddnsc/sample"
-        config.vm.provision "file", source: "ssh",          destination: "/tmp/ssh"
         config.vm.provision "file", source: "system",       destination: "/tmp/system"
 
         # provision - shell - bash - script
@@ -48,6 +47,15 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
 
     # | machine(s)
+
+        # | ddnsc
+        config.vm.define "ddnsc" do |web|
+            config.vm.hostname = "ddnsc"
+            config.vm.provider :virtualbox do |vb|
+                vb.name = "ddnsc"
+            end
+        end
+        # ddnsc |
 
         # | system-ddnsc
         config.vm.define "system-ddnsc" do |web|

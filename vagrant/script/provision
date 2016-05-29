@@ -23,29 +23,6 @@
     # ddnsc |
 
 
-    # | ssh
-    if [ -d '/tmp/ssh' ]; then
-
-        # mkdir
-        mkdir -p '/root/.ssh'
-
-        # mv
-        mv -v '/tmp/ssh/'* '/root/.ssh'
-
-        # ownership
-        chown -R root:root '/root/.ssh'
-
-        # permission(s)
-        find '/root/.ssh' -type f -exec chmod 600 {} \;
-        find '/root/.ssh' -type d -exec chmod 700 {} \;
-
-        # rm
-        rm -r '/tmp/ssh'
-
-    fi
-    # ssh |
-
-
     # | system
     if [ -d '/tmp/system' ]; then
 
